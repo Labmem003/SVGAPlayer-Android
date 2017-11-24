@@ -7,6 +7,8 @@ import org.json.JSONObject
 import java.io.File
 import java.util.*
 
+private val options = BitmapFactory.Options()
+
 /**
  * Created by PonyCui_Home on 16/6/18.
  */
@@ -51,21 +53,26 @@ class SVGAVideoEntity {
             FPS = movieParams.fps ?: 20
             frames = movieParams.frames ?: 0
         }
-        resetImages(obj)
+        try {
+            resetImages(obj)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         resetSprites(obj)
     }
 
     private fun resetImages(obj: JSONObject) {
         obj.optJSONObject("images")?.let { imgObjects ->
             imgObjects.keys().forEach { imageKey ->
+                options.inPreferredConfig = Bitmap.Config.RGB_565
                 var filePath = cacheDir.absolutePath + "/" + imgObjects[imageKey]
-                var bitmap = if (File(filePath).exists()) BitmapFactory.decodeFile(filePath) else null
+                var bitmap = if (File(filePath).exists()) BitmapFactory.decodeFile(filePath, options) else null
                 if (bitmap != null) {
                     images.put(imageKey, bitmap)
                 }
                 else {
                     (cacheDir.absolutePath + "/" + imageKey + ".png")?.takeIf { File(it).exists() }?.let { it
-                        BitmapFactory.decodeFile(it)?.let {
+                        BitmapFactory.decodeFile(it, options)?.let {
                             images.put(imageKey, it)
                         }
                     }
@@ -77,20 +84,21 @@ class SVGAVideoEntity {
     private fun resetImages(obj: MovieEntity) {
         obj.images?.entries?.forEach {
             val imageKey = it.key
-            val bitmap = BitmapFactory.decodeByteArray(it.value.toByteArray(), 0, it.value.size())
+            options.inPreferredConfig = Bitmap.Config.RGB_565
+            val bitmap = BitmapFactory.decodeByteArray(it.value.toByteArray(), 0, it.value.size(), options)
             if (bitmap != null) {
                 images.put(imageKey, bitmap)
             }
             else {
                 it.value.utf8()?.let {
                     var filePath = cacheDir.absolutePath + "/" + it
-                    var bitmap = if (File(filePath).exists()) BitmapFactory.decodeFile(filePath) else null
+                    var bitmap = if (File(filePath).exists()) BitmapFactory.decodeFile(filePath, options) else null
                     if (bitmap != null) {
                         images.put(imageKey, bitmap)
                     }
                     else {
                         (cacheDir.absolutePath + "/" + imageKey + ".png")?.takeIf { File(it).exists() }?.let { it
-                            BitmapFactory.decodeFile(it)?.let {
+                            BitmapFactory.decodeFile(it, options)?.let {
                                 images.put(imageKey, it)
                             }
                         }
